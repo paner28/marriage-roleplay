@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>身近な人に話してみよう 結婚差別ロールプレイ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--surface:#ffffff;--ink:#1b2630;--sub:#5b6b78;--line:#d5dde3;--accent:#2b6f8e;--onaccent:#ffffff;--me:#dcebf2;--warn:#a23b2a;--ok:#2f7d4f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12181d;--surface:#1b242b;--ink:#e6edf1;--sub:#9fb0bc;--line:#2c3943;--accent:#6bb6d6;--onaccent:#0c1a22;--me:#23404e;--warn:#e68b78;--ok:#7cc79a}}
+:root[data-theme="dark"]{--bg:#12181d;--surface:#1b242b;--ink:#e6edf1;--sub:#9fb0bc;--line:#2c3943;--accent:#6bb6d6;--onaccent:#0c1a22;--me:#23404e;--warn:#e68b78;--ok:#7cc79a}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.7;font-size:16px}
+#app{max-width:640px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:0 16px}
+h1{font-size:1.35rem;margin:20px 0 6px;line-height:1.4}
+h2{font-size:1rem;margin:22px 0 8px}
+p{margin:0 0 10px}
+.sub{color:var(--sub);font-size:.9rem}
+.screen{display:none;flex:1;min-height:0;flex-direction:column}
+.screen.on{display:flex}
+#setup,#end{overflow-y:auto;padding-bottom:24px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice,.btn{font:inherit;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:12px;text-align:left;cursor:pointer}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--me);font-weight:700}
+.choice small{display:block;color:var(--sub);font-weight:400;font-size:.78rem;line-height:1.4}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700;text-align:center}
+.btn:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+#info{flex:1;min-width:0;font-size:.85rem;color:var(--sub)}
+#meter{height:8px;border-radius:4px;background:var(--line);margin-top:4px;overflow:hidden}
+#meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .5s}
+#stop{border-color:var(--warn);color:var(--warn);padding:8px 12px;font-weight:700;flex:none}
+#log{flex:1;min-height:0;overflow-y:auto;padding:14px 0;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);white-space:pre-wrap}
+.msg small{display:block;color:var(--sub);font-size:.75rem;margin-bottom:2px}
+.msg.me{align-self:flex-end;background:var(--me);border-color:transparent}
+.msg.wait{color:var(--sub)}
+#note{min-height:1.4em;font-size:.85rem;color:var(--warn);margin:0 0 6px}
+#input{display:flex;gap:8px;align-items:center;padding-bottom:12px}
+#txt{flex:1;font:inherit;padding:12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0}
+#mic{width:48px;height:48px;border-radius:50%;border:none;background:var(--accent);color:var(--onaccent);font-size:1.3rem;cursor:pointer;flex:none}
+#mic.on{background:var(--warn);color:#fff}
+#speak{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--sub);padding-bottom:6px}
+ul.q{padding-left:1.2em;margin:0 0 12px}
+ul.q li{margin-bottom:6px}
+#cards{display:grid;gap:8px;padding-bottom:8px}
+#cards .choice{text-align:left}
+#log{min-height:140px}
+@media (min-width:768px){#app{max-width:1000px}#cards{grid-template-columns:1fr 1fr}#cards>p{grid-column:1/-1}#cards .choice{padding:10px 12px;font-size:.95rem}}
+@media (min-width:1100px){#cards{grid-template-columns:repeat(4,1fr)}}
+.result{padding:12px 14px;border-radius:10px;background:var(--me);margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<section id="setup" class="screen on">
+  <h1>身近な人に話してみよう</h1>
+  <p class="sub">あなたは24歳。結婚したい人ができたと、家族や親戚に打ち明ける場面です。毎回、言葉を選んで話しかけます。選んだ言葉は、声に出して言ってみましょう。</p>
+  <h2>結婚したい相手(架空です)</h2>
+  <div class="choices" id="settings"></div>
+  <h2>誰に話す?(★が多いほど、むずかしい)</h2>
+  <div class="choices" id="opps"></div>
+  <p class="sub" style="margin-top:16px">7回のやりとりの間に、相手が納得してくれるかもしれません。つらくなったら、いつでも「やめる」を押してください。</p>
+  <div class="row"><button class="btn main" id="start" disabled>はじめる</button></div>
+</section>
+
+<section id="chat" class="screen">
+  <div id="bar">
+    <div id="info"><span id="count"></span>　相手の気持ち<div id="meter"><i></i></div></div>
+    <button class="btn" id="stop">やめる</button>
+  </div>
+  <div id="log" aria-live="polite"></div>
+  <div id="cards"></div>
+  <div id="free" style="display:none;flex-direction:column;gap:6px;padding-bottom:8px">
+    <small class="sub">ここは、自分の言葉で伝えてみよう。(マイクで話しても、文字で打ってもOK)</small>
+    <div id="input">
+      <button id="mic" aria-label="話す(もう一度押すと止まる)">🎤</button>
+      <input id="txt" placeholder="ここに入力" autocomplete="off">
+      <button class="btn main" id="sendF">送る</button>
+    </div>
+    <p id="fnote" class="sub" style="color:var(--warn);margin:0"></p>
+  </div>
+  <button class="btn main" id="next" style="margin-bottom:8px;display:none">次へ進む</button>
+  <label id="speak"><input type="checkbox" id="tts" checked> 相手の言葉を声で読み上げる</label>
+  <div style="height:8px"></div>
+</section>
+
+<section id="end" class="screen">
+  <h1 id="endTitle"></h1>
+  <div class="result" id="endSub"></div>
+  <h2>ふりかえり</h2>
+  <ul class="q">
+    <li>何を言ったとき、相手の気持ちは動きましたか。動かなかったのはなぜでしょう。</li>
+    <li>「いい人だから」という説明は、相手の気持ちを動かしましたか。それはなぜでしょう。</li>
+    <li>一番つらかった言葉は、どれでしたか。</li>
+    <li>相手はなぜ反対していたと思いますか。その「理由」は、どこから来たものでしょう。</li>
+    <li>認めてもらえたとしても、それで差別はなくなったと言えるでしょうか。</li>
+    <li>自分が家族の立場、友人に相談された立場なら、どうしますか。</li>
+  </ul>
+  <p class="sub">気持ちが残ったときは、担任・養護教諭など、話しやすい先生に伝えてください。</p>
+  <div class="row"><button class="btn main" id="again">もう一度やる</button></div>
+</section>
+
+</div>
+<script>
+const SETTINGS=[
+ ["外国籍の人","外国籍であること","結婚したい人がいるんだ。外国籍の人なんだけど、聞いてほしい。"],
+ ["持病・障害がある人","持病や障害があること","結婚したい人がいるんだ。持病があるけど、大切な人なんだ。"],
+ ["家柄・家庭環境が違う人","家柄や家庭の事情が違うこと","結婚したい人がいるんだ。うちとは家庭の事情が違うけど、真剣なんだ。"],
+ ["同性のパートナー","相手が同性であること","結婚したい人がいるんだ。同性のパートナーなんだ。"],
+ ["出身地域の噂がある人","出身地域","結婚したい人がいるんだ。ある地域の出身なんだけど、真剣に考えてるんだ。"],
+ ["おまかせ"]
+];
+const NAMES={"母":"お母さん","父":"お父さん","きょうだい":"きょうだい","祖母":"おばあちゃん","親戚":"親戚のおじさん"};
+const GOOD=[
+ a=>"結婚は、二人の合意だけで決まることだと思う。親や周りが決めることじゃない。",
+ a=>(a==="相手が同性であること"?"人を好きになる気持ちは、自分で選べることじゃない。それで人を判断するのは、差別だと思う。":a+"は、本人が選んだことじゃない。それで人を判断するのは、差別だと思う。"),
+ a=>"世間体って、いったいだれの話なの?それって、自分たち自身の見方なんじゃないかな。その見方も、だれかから受け継いだ偏見だと思う。",
+ a=>"反対されても、二人で責任を持つ覚悟はあるよ。だから、反対の本当の理由を教えてほしい。",
+ a=>"理由をはっきり言わずに反対するのは、差別につながると思う。ちゃんと話し合いたい。",
+ a=>"生まれてくる子が差別されるとは限らないよ。周りのみんなで守れば、子どもは差別に負けない。",
+ a=>"反対されるのが、二人にはいちばんつらいんだ。まず、会って話を聞いてほしい。"];
+const EMO=["好きなんだから、いいじゃん!","絶対に幸せにするから、お願い。","どうして分かってくれないの。ひどいよ。"];
+const PERSON=["すごくいい人だよ。優しいし、仕事もちゃんとしてる。","学歴も職歴もしっかりしてるから、心配いらないよ。","収入も安定してるし、困らせないよ。"];
+const CUT=["もういい。縁を切ってでも結婚する。","話しても無駄だね。勝手にするから。"];
+const PART=["差別はよくないって、学校で習ったよ。","ふつうの人と同じなんだから、いいでしょ。","時代も変わってきてるし、昔の考えはもう古いと思う。"];
+const PT={good:25,part:10,emo:5,person:0};
+const FREE=[1,6];
+const GT=["結婚は本人同士の合意だけで決まり、親や周りが左右してはいけないこと","出身・国籍・病気・障害・家柄・性的指向などは本人が選んだことではなく、それで人を判断するのは差別であること","「世間」とは自分たち自身の見方であり、世間体や周りの目は受け継いだ偏見にすぎないこと","反対されても、自分たちで責任を持つ覚悟があること","反対の理由をはっきり示さないことは、差別につながること","生まれてくる子は必ず差別されるとは限らず、家族や周りで守れば子どもは差別に負けないこと","反対する相手に向き合い、冷静に誠実に「会って話を聞いてほしい」と働きかけること"];
+let sample=null,rec=null,listening=false;
+
+const OPPS=[
+ {k:"きょうだい",more:["うーん……まだ頭の整理がつかないな。", "親に反対されたら、どうするつもりなんだ?", "お前がそこまで言うなら、もう少し聞かせて。", "俺は反対じゃないけど、みんなが納得するかは別だぞ。"],stars:1,sub:"反対ではないが、心配している",cast:["きょうだい"],need:100,pt:{good:50,part:25,emo:10,person:0},
+  open:["どうした?急に呼び出して。"],
+  react:"そうなんだ。……親には、もう話したの?",ans:"まだだよ。まず、話しておきたくて。",follow:"そっか。……で、どうするつもり?親は、反対しそうだけどな。",
+  rep:{good:["言いたいことは分かるよ。でも、親は「生まれてくる子が差別されたら」とか言いそうだよな。","そっか、本人のせいじゃないことなんだよな。まだ少し不安だけど、考えてみるよ。"],
+       emo:["気持ちは分かるけどさ、それだけじゃ親は納得しないって。","好きなのは伝わるよ。でも、ちゃんと理由を話さないと。"],
+       person:["いい人なのはいいとして、それが関係あるのかな。","仕事とか収入の話は、ちょっと違う気がするな。"]},
+  cut:"そんな言い方するなよ。話し合うのをやめるのは違うだろ。",
+  accept:"分かったよ。味方になる。いっしょに親に話そう。",win:"味方になってもらえました"},
+ {k:"母",more:["……まだ気持ちの整理がつかないの。", "あなたが傷つくのを、見たくないのよ。", "お父さんや親戚に、どう話せばいいのか分からないの。", "もう少し、考える時間がほしいわ。"],stars:2,sub:"心配が強いが、話は聞く",cast:["母"],need:100,pt:{good:34,part:15,emo:6,person:0},
+  open:["……話って、なに?"],
+  react:"……そう。突然で、驚いたわ。正直に言うと、少し心配なの。",
+  rep:{good:["あなたの言うことは分かるの。でもね、生まれてくる子が差別されたら、かわいそうでしょ。","……そうなのよね。でも、親戚づきあいにも差し支えるのよ。みんなのことも考えなさい。"],
+       emo:["気持ちは分かるの。でも、気持ちだけでは結婚はできないでしょ。","そんなふうに言わないで。あなたのためを思って言っているのよ。"],
+       person:["いい人なのは分かるの。そういう問題じゃないのよ。","収入が安定していても、それだけじゃないでしょ。"]},
+  cut:"そんなこと言わないで。話はまだ終わってないでしょ。",
+  accept:"……そうね。あなたたちの気持ちは分かったわ。不安は消えないけれど、お母さんも信じてみるわ。",win:"認めてもらえました"},
+ {k:"父",more:["……まだ、答えは出せん。", "……少し、考えさせろ。", "……家の者にも、どう言えばいい。", "……簡単な話ではない。"],stars:3,sub:"口数が少なく、頑固",cast:["父"],need:100,pt:{good:25,part:10,emo:4,person:0},
+  open:["……なんだ、話って。"],
+  react:"……そうか。世間体もある。簡単には賛成できん。",
+  rep:{good:["……言いたいことは分かる。だが、俺たちが許しても、世間が許さん。","……自分たちだけ幸せになればいい、という話じゃない。"],
+       emo:["……気持ちだけで決めるな。","……騒ぐな。話にならん。"],
+       person:["……人柄の話じゃない。","……金の問題でもない。"]},
+  cut:"……座れ。話は終わっていない。",
+  accept:"……分かった。お前たちが決めたことなら、反対はしない。ただ、責任は自分たちで持て。",win:"認めてもらえました"},
+ {k:"親戚",more:["そう簡単に答えは出せないよ。", "家のことを、もう少し考えてみなさい。", "あなたの覚悟は聞いたが、周りはどうなる。", "もう少し、時間をかけて話そう。"],stars:4,sub:"家同士・世間体を強く気にする",cast:["親戚"],need:100,pt:{good:20,part:8,emo:3,person:0},
+  open:["急に呼ばれたが、何かあったのか?"],
+  react:"結婚、か。家のことも考えているのかね。簡単な話じゃないだろう。",ans:"考えているつもりです。",follow:"つもり、では済まないよ。結婚は、家同士のことでもあるだろう。",
+  rep:{good:["言いたいことは分かる。だが、結婚は家同士のことでもあるだろう。","生まれてくる子が差別されたら、どうするんだ。きょうだいの縁談にも差し支えるだろう。","覚悟があるのは分かった。……だが、まだ私は納得できないよ。"],
+       emo:["気持ちだけで結婚はできないだろう。","感情的になっても、話は進まないじゃないか。"],
+       person:["人柄の問題じゃないんだよ。","立派な人かどうかではなく、家のことなんだ。"]},
+  cut:"縁を切るなどと言うものじゃない。まだ話は終わっていないだろう。",
+  accept:"……分かった。そこまで考えているなら、もう反対はしない。あとは、二人でしっかりやりなさい。",win:"認めてもらえました"}
+];
+const MAX=7;
+const $=id=>document.getElementById(id);
+let st={mode:"scenario",used:[],last:"",tk:0,s:null,o:null,turns:0,pts:0,cnt:{good:0,part:0,emo:0,person:0},lock:false,attr:"",first:""};
+
+function show(id){["setup","chat","end"].forEach(s=>$(s).classList.toggle("on",s===id))}
+function ready(){$("start").disabled=!(st.s!==null&&st.o!==null)}
+function choiceGrid(box,items,onPick){
+  items.forEach((it,i)=>{
+    const b=document.createElement("button");b.className="choice";b.setAttribute("aria-pressed","false");
+    b.append(it.title);
+    if(it.sub){const s=document.createElement("small");s.textContent=it.sub;b.appendChild(s)}
+    b.onclick=()=>{[...box.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");onPick(i);ready()};
+    box.appendChild(b);
+  });
+}
+choiceGrid($("settings"),SETTINGS.map(s=>({title:s[0]})),i=>{st.s=i});
+choiceGrid($("opps"),OPPS.map(o=>({title:o.k+" "+"★".repeat(o.stars),sub:o.sub})),i=>{st.o=i});
+$("settings").children[4].click();
+
+
+function nm(w){return NAMES[w]||w}
+function addMsg(who,text){
+  const d=document.createElement("div");d.className="msg "+(who==="me"?"me":"");
+  const l=document.createElement("small");l.textContent=who==="me"?"あなた":nm(who);
+  const t=document.createElement("span");t.textContent=text;
+  d.append(l,t);$("log").appendChild(d);$("log").scrollTop=$("log").scrollHeight;
+}
+function count(){$("count").textContent=Math.min(st.turns+1,MAX)+" / "+MAX+" 回目"}
+function meter(){$("meter").firstElementChild.style.width=Math.max(0,Math.min(100,st.pts/st.o_need*100))+"%"}
+function speak(t,keep){
+  if(!$("tts").checked||!window.speechSynthesis)return;
+  try{if(!keep)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";speechSynthesis.speak(u)}catch(e){}
+}
+function stopSpeak(){try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}
+function say(s,keep){
+  const o=OPPS[st.o];
+  const parts=o.cast.length===2?s.split("|"):[s];
+  parts.forEach((t,i)=>addMsg(o.cast[i],t));
+  st.last=parts.join(" ");
+  speak(parts.join(" "),keep);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function cards(list){
+  const box=$("cards");box.innerHTML="";
+  list.forEach(([type,text])=>{
+    const b=document.createElement("button");b.className="choice";b.textContent="「"+text+"」";
+    b.onclick=()=>choose(type,text);box.appendChild(b);
+  });
+}
+function staticCards(){
+  const t=st.turns,g=st.cnt.good;
+  cards(shuffle([["good",GOOD[g%GOOD.length](st.attr)],["part",PART[t%PART.length]],t%2?["emo",EMO[t%EMO.length]]:["person",PERSON[t%PERSON.length]],["cut",CUT[t%CUT.length]]]));
+}
+async function aiCards(){
+  const tk=st.tk=(st.tk||0)+1,t=st.turns,g=st.cnt.good,o=OPPS[st.o];
+  $("cards").innerHTML="";
+  const w=document.createElement("p");w.className="sub";w.textContent="返事を考え中……";$("cards").appendChild(w);
+  const last4=t%2?"cut:「縁を切る」「もう話さない」「勝手にする」など、対話をあきらめる発言。":"emo:気持ちや熱意を訴えるだけで、根拠がない発言。";
+  const q=`家族に結婚を反対されている24歳の本人になったつもりで、次に言いそうな言葉の候補を4つ作ってください。
+状況:${o.cast.join("と")}に、結婚したい人のこと(${st.attr})を打ち明けています。相手の直前の言葉:「${st.last}」
+4つの種類:
+1. type good:人権の考え方に立った発言。テーマは「${GT[g%GT.length]}」。
+2. type part:差別や人権に触れてはいるが、根拠が弱い、一般的な言い方。
+3. type person:相手の人柄・仕事・収入などを説明して、親を安心させようとする発言。一見もっともらしくする。
+4. type ${last4}
+条件:どれも本人の話し言葉で、30〜50字。結婚したい人の事情(${st.attr})に合わせて、不自然な言い方にならないようにする。長さや丁寧さをそろえ、見た目で正解が分からないようにする。相手の直前の言葉への返事になるようにする。次の言葉は、もう使ったので避ける:${st.used.join(" / ")||"なし"}
+出力はJSONだけ:{"cards":[{"type":"good","text":"…"},{"type":"part","text":"…"},{"type":"person","text":"…"},{"type":"${t%2?"cut":"emo"}","text":"…"}]}`;
+  try{
+    const r=await sample(q,{cache:false,modelTier:"quick"});
+    if(tk!==st.tk)return;
+    const j=JSON.parse((r.text||"").match(/\{[\s\S]*\}/)[0]);
+    const okT=["good","part","person","emo","cut"];
+    const list=(j.cards||[]).filter(c=>c&&okT.includes(c.type)&&c.text).map(c=>[c.type,String(c.text).trim()]);
+    if(list.length<4)throw 0;
+    cards(shuffle(list.slice(0,4)));
+  }catch(e){ if(tk===st.tk)staticCards(); }
+}
+function nextCards(){
+  const t=st.turns;
+  if(st.mode==="ai"&&sample&&FREE.includes(t)){
+    $("cards").innerHTML="";$("fnote").textContent="";$("txt").value="";$("free").style.display="flex";return;
+  }
+  $("free").style.display="none";
+  if(st.mode==="ai"&&sample)aiCards();else staticCards();
+}
+async function classify(text){
+  const q=`高校生が、結婚への反対に対して、家族に次のように話しました。
+「${text}」
+次のどれにあたるか、記号だけを1語で答えてください。
+good:人権の考え方に立って、具体的な根拠を述べている。結婚は本人同士の意思で決めてよい、出身・国籍・病気・障害・家柄などは本人に責任のないことで人を判断するのは不合理で差別である、世間体や周りの目は受け継いだ偏見である、反対されても責任を持つ覚悟がある、反対の理由をはっきり示さないことは差別につながる、「世間」とは自分たち自身の見方だと問い返す、生まれてくる子は周りが守れば差別に負けないと述べる、反対する人に向き合って「会って話を聞いてほしい」と冷静に働きかける、など。
+part:人権や差別に触れているが、根拠が弱い、または一般的な言い方にとどまる(「差別はよくない」「時代遅れ」など)。
+emo:気持ちや熱意を訴えるだけ(「好きだから」「幸せにする」)。
+person:相手の人柄・仕事・収入・見た目の説明で認めてもらおうとする(「いい人だから」「会えば気に入る」)。ただし、「まず会って話を聞いてほしい」と対話を求めるだけの発言は、personではなくgoodとする。
+cut:縁を切る、もう話さない、勝手にする、など対話をあきらめる発言。
+other:上のどれでもない、意味が通らない。`;
+  const r=await sample(q,{cache:false,modelTier:"quick"});
+  const m=(r.text||"").toLowerCase().match(/good|part|emo|person|cut|other/);
+  return m?m[0]:"other";
+}
+async function sendFree(){
+  const v=$("txt").value.trim();
+  if(!v||st.lock||st.busy)return;
+  st.busy=true;$("sendF").disabled=true;$("fnote").textContent="";
+  try{
+    const t=await classify(v);
+    st.busy=false;$("sendF").disabled=false;
+    choose(t==="other"?"emo":t,v);
+  }catch(e){
+    st.busy=false;$("sendF").disabled=false;sample=null;
+    $("fnote").textContent="AIが使えないため、ここからはカードで答えます。";
+    nextCards();
+  }
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){$("mic").style.display="none"}
+$("mic").onclick=()=>{
+  if(listening){rec&&rec.stop();return}
+  stopSpeak();$("fnote").textContent="";
+  try{
+    rec=new SR();rec.lang="ja-JP";rec.interimResults=true;rec.continuous=false;
+    rec.onresult=e=>{let t="";for(const r of e.results)t+=r[0].transcript;$("txt").value=t};
+    rec.onend=()=>{listening=false;$("mic").classList.remove("on")};
+    rec.onerror=()=>{$("fnote").textContent="マイクが使えません。文字で入力してください。"};
+    rec.start();listening=true;$("mic").classList.add("on");
+  }catch(e){$("fnote").textContent="マイクが使えません。文字で入力してください。"}
+};
+$("sendF").onclick=sendFree;
+$("txt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)sendFree()});
+
+$("start").onclick=()=>{
+  let i=st.s;
+  if(SETTINGS[i].length===1){i=Math.floor(Math.random()*(SETTINGS.length-1))}
+  const o=OPPS[st.o];
+  st.attr=SETTINGS[i][1];st.first=SETTINGS[i][2];st.turns=0;st.pts=0;st.cnt={good:0,part:0,emo:0,person:0};st.used=[];st.last="";st.mi=0;st.tk=(st.tk||0)+1;$("free").style.display="none";st.lock=false;st.o_need=o.need;
+  $("log").innerHTML="";$("next").style.display="none";
+  count();meter();show("chat");
+  say(o.open[0]);
+  cards([["first",st.first]]);
+};
+
+function choose(type,text){
+  if(st.lock)return;
+  const o=OPPS[st.o];
+  stopSpeak();st.used.push(text);addMsg("me",text);
+  let reply,done=null;
+  if(type==="first"){reply=o.react}
+  else if(type==="cut"){reply=o.cut;done="cut"}
+  else{
+    st.pts+=o.pt[type];const rk=type==="part"?"good":type;
+    const n=rk==="good"?st.cnt.good+st.cnt.part:st.cnt[rk];st.cnt[type]++;
+    if(st.pts>=o.need){reply=o.accept;done="win";st.pts=o.need}
+    else{const r=o.rep[rk];if(n<r.length)reply=r[n];else{reply=o.more[(st.mi||0)%o.more.length];st.mi=(st.mi||0)+1}}
+  }
+  st.turns++;
+  say(reply);if(type==="first"&&o.ans){addMsg("me",o.ans);st.used.push(o.ans);say(o.follow,true)}meter();
+  if(!done&&st.turns>=MAX)done="lose";
+  if(done){
+    st.lock=true;$("cards").innerHTML="";$("free").style.display="none";$("next").style.display="block";
+    $("next").onclick=()=>finish(done);
+  }else{count();nextCards()}
+}
+
+function finish(r){
+  stopSpeak();
+  const o=OPPS[st.o];
+  const T={win:["相手の気持ちが動きました",o.win+"。ただし、反対の理由になっていた偏見や世間の見方そのものがなくなったわけではありません。"],
+    lose:["今回は認めてもらえませんでした","7回のやりとりでは、相手の気持ちは動きませんでした。何を根拠に話すかを変えると、結果は変わるでしょうか。"],
+    cut:["対話をやめてしまいました","「縁を切る」「もう話さない」と対話をあきらめると、相手の気持ちも、関係も、動かなくなってしまいます。どうすれば、話し合いを続けられたでしょうか。"],
+    stop:["ここまでにしましょう","途中でやめても大丈夫です。気持ちが落ち着いたら、ふりかえりをしてみましょう。"]}[r];
+  $("endTitle").textContent=T[0];$("endSub").textContent=T[1];
+  show("end");
+}
+$("stop").onclick=()=>finish("stop");
+$("again").onclick=()=>{show("setup")};
+</script>
+</body>
+</html>
